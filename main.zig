@@ -34,13 +34,9 @@ const UnionExample = union(enum){
     GameOver: struct {winner: ?PlayerType},
 };
 
-fn colMask(col: u3) u64 { return (@as(u64, 0x3F) << (@as(u6, col) * 7)); }
-fn bottomMask(col: u3) u64 { return @as(u64, 1) << (@as(u6, col) * 7); }
-
 const chip = struct {
     statusEffect: Effect,
     pos: struct {u8, u8},
-    
 };
 
 const Effect = enum {
@@ -59,20 +55,25 @@ const os_msg = switch (builtin.target.os.tag){
 
 pub fn main() !void{
     
-    //var stdout = std.io.getStdOut().writer();
+    var stdin_buffer: [512]u8 = undefined;
+    var stdin_reader = std.fs.File.stdin().reader(&stdin_buffer);
+    const stdin = &stdin_reader.interface;
+    //_ = stdin;
 
-    print("os msg is {s}", . {os_msg}); 
+    var stdout_buffer : [512]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     const welcoming = 
         \\Hello
         \\Welcome to Connect 4 created by
         \\Cameron Paul
     ;
-    const ns_per_frame = std.time.ns_per_ms * 16; 
-
-    print("{s}\n", . {welcoming});
 
     const WIDTH = 6;
     const HEIGHT = 7;
+
+    const ns_per_frame = std.time.ns_per_ms * 16;
 
     var game = Game {
         .red = 0,
@@ -80,24 +81,61 @@ pub fn main() !void{
         .moves = 0,
     };
 
-   _ = Play(&game, 1);
-
-   _ = Play(&game, 0);
-    PrintBoard(game, HEIGHT, WIDTH);
     var gameOver = false;
     _ = &gameOver;
+
+    var col : u8 = 0;
+
+    try stdout.print("{s}\n", .{os_msg});
+
+    try stdout.print("{s}\n", .{welcoming});
+
+    _ = &col;
+    _ = ns_per_frame;
+
+    try stdout.flush();
+
     while (!gameOver){
+        
+        if ((game.moves & 1) == 0){
+            
+            try stdout.writeAll("Place chip in column: ");
+            try stdout.flush();
 
-        std.Thread.sleep(ns_per_frame);
-        gameOver = true;
+            const input = try stdin.takeDelimiterExclusive('\n'); // TODO: Change to both new line and space
+            const val = try std.fmt.parseInt(u3, input, 10);
+            
+            try stdout.print("\nPlacing chip in column {}\n", .{val});
+            try stdout.flush();
+            if (val >= 1 and val <= 5){
+
+                _ = Play(&game, val);
+
+            }else {
+
+                break; // TODO: redo input if invalid 
+            }
+            
+            gameOver = true;
+            
+        }else{
+
+            //TODO: AI play
+
+        }
+
+        // TODO: Check if Player or AI has won
+        PrintBoard(game, HEIGHT, WIDTH);
+
     }else{
-
-        print("Game over\n", .{});
+        try stdout.writeAll("\nGame Over \n");
+        try stdout.flush();
+       
+        
     }
-
 }
 
-fn PrintBoard(g: Game, HEIGHT: u8, WIDTH: u8) void{
+fn PrintBoard(g: Game, HEIGHT: u8, WIDTH: u8) void{ //TODO: Change to new stdout
 
     for (0..HEIGHT) |rev_row| {
         const row = HEIGHT - 1 - rev_row;
@@ -119,6 +157,9 @@ fn PrintBoard(g: Game, HEIGHT: u8, WIDTH: u8) void{
     }
 
 }
+
+fn colMask(col: u3) u64 { return (@as(u64, 0x3F) << (@as(u6, col) * 7)); }
+fn bottomMask(col: u3) u64 { return @as(u64, 1) << (@as(u6, col) * 7); }
 
 fn Play(g: *Game, col: u3) bool {
 
