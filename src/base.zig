@@ -3,6 +3,9 @@ const std = @import("std");
 const builtin = @import("builtin");
 const ai = @import("ai.zig");
 
+pub const WIDTH = 7;
+pub const HEIGHT = 6;
+
 pub const Game = struct {
     red: u64,
     yellow: u64,
@@ -10,7 +13,11 @@ pub const Game = struct {
     boardHeight: u6,
     boardWidth: u6,
     gameOver: bool,
+    board: u64,
 };
+
+pub const BOARD_MASK_ALL: u64 =
+    (@as(u64, 1) << @as(u6, WIDTH * (HEIGHT + 1))) - 1;
 
 fn BoardCheck(board: u64, height: u6) bool {
 
@@ -60,8 +67,8 @@ fn PrintBoard(g: *Game, HEIGHT: u8, WIDTH: u8, writer: *std.Io.Writer) !void {
 
 }
 
-fn colMask(col: u3) u64 { return (@as(u64, 0x3F) << (@as(u6, col) * 7)); }
-fn bottomMask(col: u3) u64 { return @as(u64, 1) << (@as(u6, col) * 7); }
+pub fn colMask(col: u3) u64 { return (@as(u64, 0x3F) << (@as(u6, col) * 7)); }
+pub fn bottomMask(col: u3) u64 { return @as(u64, 1) << (@as(u6, col) * 7); }
 
 fn Play(g: *Game, col: u3) bool {
 
@@ -79,6 +86,8 @@ fn Play(g: *Game, col: u3) bool {
         g.yellow ^= move_bit;
         g.gameOver = BoardCheck(g.yellow, g.boardHeight);
     }
+
+    g.board = g.red | g.yellow;
     
     g.moves += 1;
     return true;
@@ -108,19 +117,7 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
             
         }else{
 
-            try stdout.writeAll("Enter a chip in column: ");
-            try stdout.flush();
 
-             const input = try stdin.takeDelimiterExclusive('\n');
-                                                                  
-             const val = try std.fmt.parseInt(u3, input, 10);
-
-             _ = Play(game, val); 
-             _ = try stdin.discardDelimiterInclusive('\n');
-             if (game.gameOver) {
-                try stdout.writeAll("Yellow wins!! \n");
-                try stdout.flush(); 
-             }
             //TODO: AI play
 
         }
