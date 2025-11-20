@@ -2,6 +2,8 @@ const print = std.debug.print;
 const std = @import("std");
 const builtin = @import("builtin");
 const base = @import("src/base.zig");
+
+
 const PlayerType = enum(u64) {
     AI = 2,
     PLAYER = 1,
@@ -63,16 +65,14 @@ pub fn main() !void{
         \\Cameron Paul
     ;
 
-    const WIDTH = 7;
-    const HEIGHT = 6;
-
     var game = base.Game {
         .red = 0,
         .yellow = 0,
         .moves = 0,
-        .boardWidth = WIDTH,
-        .boardHeight = HEIGHT,
+        .boardWidth = base.WIDTH,
+        .boardHeight = base.HEIGHT,
         .gameOver = false,
+        .board = 0,
     };
 
     try stdout.print("{s}\n", .{os_msg});
@@ -81,7 +81,7 @@ pub fn main() !void{
 
     try stdout.flush();
 
-   try base.BaseConnectFour(&game, stdout, stdin, WIDTH, HEIGHT);
+    try base.BaseConnectFour(&game, stdout, stdin, base.WIDTH, base.HEIGHT);
 
 
 }

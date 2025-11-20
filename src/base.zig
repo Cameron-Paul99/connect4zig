@@ -41,13 +41,13 @@ fn BoardCheck(board: u64, height: u6) bool {
 
 }
 
-fn PrintBoard(g: *Game, HEIGHT: u8, WIDTH: u8, writer: *std.Io.Writer) !void { 
+fn PrintBoard(g: *Game, height: u8, width: u8, writer: *std.Io.Writer) !void { 
 
     for (0..HEIGHT) |rev_row| {
-        const row = HEIGHT - 1 - rev_row;
+        const row = height - 1 - rev_row;
         try writer.writeAll("|");
         try writer.flush();
-        for (0..WIDTH) |col|{
+        for (0..width) |col|{
             const bit_index = col * 7 + row;
             const bit_mask: u64 = @as(u64, 1) << @intCast(bit_index);
             _ = &bit_mask;
@@ -93,7 +93,7 @@ fn Play(g: *Game, col: u3) bool {
     return true;
 }
 
-pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reader, WIDTH: u8, HEIGHT: u8) !void {
+pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reader, width: u8, height: u8) !void {
     
     while (!game.gameOver){
         
@@ -119,12 +119,13 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
 
             //TODO: AI play
+            _ = ai.NegaMax(game);
 
         }
 
         // TODO: Check if Player or AI has won
         //
-        try PrintBoard(game, HEIGHT, WIDTH, stdout);
+        try PrintBoard(game, height, width, stdout);
 
     }else{
 
