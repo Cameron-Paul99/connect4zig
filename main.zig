@@ -69,9 +69,9 @@ pub fn main() !void{
         .red = 0,
         .yellow = 0,
         .moves = 0,
-        .boardWidth = base.WIDTH,
-        .boardHeight = base.HEIGHT,
-        .gameOver = false,
+        .board_width = base.WIDTH,
+        .board_height = base.HEIGHT,
+        .game_over = false,
         .board = 0,
     };
 

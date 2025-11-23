@@ -5,14 +5,15 @@ const ai = @import("ai.zig");
 
 pub const WIDTH = 7;
 pub const HEIGHT = 6;
+const INF: i32 = 1_000_000; // safely bigger than any score you’ll use
 
 pub const Game = struct {
     red: u64,
     yellow: u64,
     moves: u8,
-    boardHeight: u6,
-    boardWidth: u6,
-    gameOver: bool,
+    board_height: u6,
+    board_width: u6,
+    game_over: bool,
     board: u64,
 };
 
@@ -70,7 +71,7 @@ fn PrintBoard(g: *Game, height: u8, width: u8, writer: *std.Io.Writer) !void {
 pub fn colMask(col: u3) u64 { return (@as(u64, 0x3F) << (@as(u6, col) * 7)); }
 pub fn bottomMask(col: u3) u64 { return @as(u64, 1) << (@as(u6, col) * 7); }
 
-fn Play(g: *Game, col: u3) bool {
+pub fn Play(g: *Game, col: u3) bool {
 
     const mask_all = g.red | g.yellow;
     const col_mask = colMask(col);
@@ -79,12 +80,12 @@ fn Play(g: *Game, col: u3) bool {
     const move_bit = (mask_all + bottomMask(col)) & col_mask;
     if ((g.moves & 1) == 0){
         g.red ^= move_bit;
-        g.gameOver = BoardCheck(g.red, g.boardHeight);
+        g.game_over = BoardCheck(g.red, g.board_height);
 
     }
     else {
         g.yellow ^= move_bit;
-        g.gameOver = BoardCheck(g.yellow, g.boardHeight);
+        g.game_over = BoardCheck(g.yellow, g.board_height);
     }
 
     g.board = g.red | g.yellow;
@@ -94,8 +95,11 @@ fn Play(g: *Game, col: u3) bool {
 }
 
 pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reader, width: u8, height: u8) !void {
-    
-    while (!game.gameOver){
+
+    //const alpha = std.math.minInt(i32);
+    //const beta = std.math.maxInt(i32);
+
+    while (!game.game_over){
         
         if ((game.moves & 1) == 0){
             
@@ -110,7 +114,7 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
              _ = Play(game, val);
              _ = try stdin.discardDelimiterInclusive('\n');
 
-             if (game.gameOver) {
+             if (game.game_over) {
                 try stdout.writeAll("Red wins!!\n");
                 try stdout.flush(); 
              }
@@ -119,7 +123,10 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
 
             //TODO: AI play
-            _ = ai.NegaMax(game);
+
+            const moveRes = ai.NegaMax(game, 3, -INF, INF);
+            _ = Play(game, moveRes.best_move);
+            try stdout.print("AI is done with score {d}\n", .{moveRes.score});
 
         }
 
