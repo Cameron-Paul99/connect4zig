@@ -12,7 +12,19 @@ pub const TT = struct{
     t: []Entry,
 
     pub fn init(allocator: *Allocator, size: usize) !TT{
-        return TT {.t = try allocator.alloc(Entry, size)};
+        var table = try allocator.alloc(Entry, size);
+
+        for (table) |*e| {
+            
+            e.* = .{
+                .key = 0,
+                .val = 0,
+            };
+
+        }
+        return TT {
+            .t = table,
+        };
     }
 
     pub fn deinit(self: *TT, allocator: *Allocator) void {
@@ -20,10 +32,12 @@ pub const TT = struct{
     }
 
     fn Index(self: *TT, k: u56) usize{
-        return @intCast(k % self.t.len);
+        const len_u56: u56 = @intCast(self.t.len);
+        const idx_u56: u56 = k % len_u56;
+        return @intCast(idx_u56);
     }
 
-    pub fn Put(self: *TT, k: u56, val: u8){
+    pub fn Put(self: *TT, k: u56, val: u8) void{
 
         const i = self.Index(k);
         self.t[i].key = k;
