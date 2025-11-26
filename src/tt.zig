@@ -47,7 +47,7 @@ pub const TT = struct{
 
     pub fn Get(self: *TT, k: u56) ?u8{
         const i = self.Index(k);
-        if (self.t[i].key == k) return self.t[i].key;
+        if (self.t[i].key == k) return self.t[i].val;
 
         return null;
     };
