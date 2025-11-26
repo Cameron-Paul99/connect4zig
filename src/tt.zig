@@ -1,18 +1,18 @@
 const print = std.debug.print;
 const std = @import("std");
 const builtin = @import("builtin");
-
+const Allocator = std.mem.Allocator;
 const Entry = packed struct {
     key: u56,
     val: u8,
 };
-
+ 
 pub const TT = struct{
 
     t: []Entry,
 
     pub fn init(allocator: *Allocator, size: usize) !TT{
-        var table = try allocator.alloc(Entry, size);
+        const table = try allocator.alloc(Entry, size);
 
         for (table) |*e| {
             
@@ -43,14 +43,14 @@ pub const TT = struct{
         self.t[i].key = k;
         self.t[i].val = val;
 
-    };
+    }
 
     pub fn Get(self: *TT, k: u56) ?u8{
         const i = self.Index(k);
         if (self.t[i].key == k) return self.t[i].val;
 
         return null;
-    };
+    }
 
 
 };

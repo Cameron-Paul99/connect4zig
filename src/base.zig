@@ -2,11 +2,11 @@ const print = std.debug.print;
 const std = @import("std");
 const builtin = @import("builtin");
 const ai = @import("ai.zig");
+const t = @import("tt.zig");
 
 pub const WIDTH = 7;
 pub const HEIGHT = 6;
 const INF: i32 = 1_000_000; // safely bigger than any score you’ll use
-
 
 pub const Game = struct {
     red: u64,
@@ -99,8 +99,9 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
     //const alpha = std.math.minInt(i32);
     //const beta = std.math.maxInt(i32);
-    const allocator = std.heap.page_allocator;
-    _ = allocator;
+    var allocator = std.heap.page_allocator;
+    var tt = try t.TT.init(&allocator, 1 << 24);
+    defer tt.deinit(&allocator);
 
     ai.ColOrderInit();
 
