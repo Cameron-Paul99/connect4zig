@@ -7,6 +7,7 @@ pub const WIDTH = 7;
 pub const HEIGHT = 6;
 const INF: i32 = 1_000_000; // safely bigger than any score you’ll use
 
+
 pub const Game = struct {
     red: u64,
     yellow: u64,
@@ -98,6 +99,10 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
     //const alpha = std.math.minInt(i32);
     //const beta = std.math.maxInt(i32);
+    const allocator = std.heap.page_allocator;
+    _ = allocator;
+
+    ai.ColOrderInit();
 
     while (!game.game_over){
         
@@ -124,10 +129,15 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
             //TODO: AI play
 
-            const moveRes = ai.NegaMax(game, 3, -INF, INF);
+            const moveRes = ai.NegaMax(game, 8, -INF, INF);
+
+            try stdout.print("AI best move is {d}\n", .{moveRes.best_move});
             _ = Play(game, moveRes.best_move);
             try stdout.print("AI is done with score {d}\n", .{moveRes.score});
-
+            if (game.game_over) {
+                try stdout.writeAll("Yellow wins!!\n");
+                try stdout.flush(); 
+            }
         }
 
         // TODO: Check if Player or AI has won

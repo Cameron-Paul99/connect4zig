@@ -10,19 +10,50 @@ pub const SearchRes = struct {
     best_move: u3,
 };
 
+var col_order: [base.WIDTH]usize = undefined;
+
 const NEG_INF = std.math.minInt(i32);
 
-pub fn NegaMax(game: *base.Game, depth: u8, alpha_in: i32, beta_in: i32) SearchRes{
+pub fn ColOrderInit() void {
+    const center: i32 = base.WIDTH / 2;
+
+    var idx: usize = 0;
+    col_order[idx] = @intCast(center);
+    idx += 1;
+
+    var offset: i32 = 1;
+    while (idx < base.WIDTH) : (offset += 1) {
+        const left  = center - offset;
+        const right = center + offset;
+
+        if (left >= 0) {
+            col_order[idx] = @intCast(left);
+            idx += 1;
+        }
+        if (right < base.WIDTH and idx < base.WIDTH) {
+            col_order[idx] = @intCast(right);
+            idx += 1;
+        }
+
+    }
+
+    for (0.. base.WIDTH) |i|{
+        
+        print("{d} ", .{col_order[i]});
+
+    }
+}
+
+pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) SearchRes{
 
     var alpha = alpha_in;
     var beta = beta_in;
 
     if (depth == 0){
-        //print("returning depth here", .{});
-        return DepthMax(game);
-        
+        return .{.score = 0, .best_move = 0};
     }
 
+    // DRAW
     if (game.moves == game.board_height * game.board_width){
         print("returning moves here\n", .{});
         return .{
@@ -30,9 +61,11 @@ pub fn NegaMax(game: *base.Game, depth: u8, alpha_in: i32, beta_in: i32) SearchR
             .best_move = 0, 
         };
     }
-    
+   
+    // WINNING MOVE
     for (0..game.board_width) |i| {
-        const c: u3 = @intCast(i);
+        //const c: u3 = @intCast(i);
+        const c: u3 = @intCast(col_order[i]);
         if (CanPlay(c, game) and IsWinningMove(game, c)){
             return .{ 
                 .score = (game.board_height * game.board_width + 1 - game.moves) / 2,
@@ -41,32 +74,34 @@ pub fn NegaMax(game: *base.Game, depth: u8, alpha_in: i32, beta_in: i32) SearchR
         }
     }
 
-
+    // Upper bound Cal
     const max = (game.board_width * game.board_height - 1 - game.moves) / 2;
     if (beta > max){
         beta = max;
-        if (alpha >= beta) return .{ .score = beta, .best_move = 0};
+        if (alpha >= beta){
+            return .{ .score = beta, .best_move = 0};
+        }
     }
-
-    var best_score: i32 = -(@as(i32, game.board_width) * @as(i32, game.board_height));
+    
     var best_move: u3 = 0;
    
+    // Leaf Node Calculation
     for (0..game.board_width) |i| {
-        const c: u3 = @intCast(i);
+        const c: u3 = @intCast(col_order[i]);
+
         if (CanPlay(c, game)) {
             
             var child = game.*;
            _ = base.Play(&child, c);
             
-            const childRes = NegaMax(&child, depth - 1, -alpha, -beta);
-            const score = -childRes.score;
+            const childRes = NegaMax(&child, depth - 1, -beta, -alpha);
+            const score = -1 * childRes.score;
 
             if (score >= beta){
                 return .{ .score = score, .best_move = c};
             }
             if (score > alpha){
                 alpha = score;
-                best_score = score;
                 best_move = c;
             }
 
@@ -74,43 +109,8 @@ pub fn NegaMax(game: *base.Game, depth: u8, alpha_in: i32, beta_in: i32) SearchR
 
     }
 
-    if (best_score == NEG_INF) {
-        best_score = alpha;
-    }
-    print("Got to the end of the function\n", .{});
-    return .{.score = best_score, .best_move = best_move };
+    return .{.score = alpha, .best_move = best_move };
 }
-
-fn DepthMax(game: *base.Game) SearchRes{
-    var bestScore: i32 = -999999;
-    var bestMove: u3 = 0;
-
-    var i: usize = 0;
-    while (i < game.board_width) : (i += 1) {
-         const c: u3 = @intCast(i);
-        if (!CanPlay(c, game)) continue;
-
-        var child = game.*;
-        _ = base.Play(&child, c);
-        const score = Evaluate(&child); // heuristic
-
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = c;
-        }
-    }
-
-    return .{
-        .score = bestScore,
-        .best_move = bestMove,
-    };    
-}
-
-fn Evaluate(game: *base.Game) i32 {
-    _ = game;
-    return 0; // placeholder — we can make a real one next
-}
-
 
 fn CanPlay(col: u3, g: *base.Game) bool{
     const mask_all = g.red | g.yellow;
