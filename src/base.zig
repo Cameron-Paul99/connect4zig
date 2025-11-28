@@ -16,6 +16,8 @@ pub const Game = struct {
     board_width: u6,
     game_over: bool,
     board: u64,
+    tt: t.TT,
+    curr_player: u64,
 };
 
 pub const BOARD_MASK_ALL: u64 =
@@ -99,9 +101,7 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
     //const alpha = std.math.minInt(i32);
     //const beta = std.math.maxInt(i32);
-    var allocator = std.heap.page_allocator;
-    var tt = try t.TT.init(&allocator, 1 << 24);
-    defer tt.deinit(&allocator);
+
 
     ai.ColOrderInit();
 
@@ -130,7 +130,7 @@ pub fn BaseConnectFour(game: *Game, stdout: *std.Io.Writer, stdin: *std.Io.Reade
 
             //TODO: AI play
 
-            const moveRes = ai.NegaMax(game, 8, -INF, INF);
+            const moveRes = ai.Solve(game, false);
 
             try stdout.print("AI best move is {d}\n", .{moveRes.best_move});
             _ = Play(game, moveRes.best_move);

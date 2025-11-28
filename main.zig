@@ -2,7 +2,7 @@ const print = std.debug.print;
 const std = @import("std");
 const builtin = @import("builtin");
 const base = @import("src/base.zig");
-
+const t = @import("src/tt.zig");
 
 const PlayerType = enum(u64) {
     AI = 2,
@@ -65,6 +65,10 @@ pub fn main() !void{
         \\Cameron Paul
     ;
 
+    var allocator = std.heap.page_allocator;
+    var tt = try t.TT.init(&allocator, 1 << 24);
+    defer tt.deinit(&allocator);
+
     var game = base.Game {
         .red = 0,
         .yellow = 0,
@@ -73,6 +77,8 @@ pub fn main() !void{
         .board_height = base.HEIGHT,
         .game_over = false,
         .board = 0,
+        .tt = tt,
+        .curr_player = 0,
     };
 
     try stdout.print("{s}\n", .{os_msg});

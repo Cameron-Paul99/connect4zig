@@ -5,6 +5,8 @@ const base = @import("base.zig");
 
 pub var original_max_depth: u8 = 0;
 
+const INF: i32 = 1_000_000;
+
 pub const SearchRes = struct {
     score: i32,
     best_move: u3,
@@ -13,6 +15,7 @@ pub const SearchRes = struct {
 var col_order: [base.WIDTH]usize = undefined;
 
 const NEG_INF = std.math.minInt(i32);
+const MIN_SCORE = -(7*6)/2 + 3;
 
 pub fn ColOrderInit() void {
     const center: i32 = base.WIDTH / 2;
@@ -38,7 +41,7 @@ pub fn ColOrderInit() void {
     }
 
     for (0.. base.WIDTH) |i|{
-        
+
         print("{d} ", .{col_order[i]});
 
     }
@@ -49,13 +52,15 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
     var alpha = alpha_in;
     var beta = beta_in;
 
-    if (depth == 0){
-        return .{.score = 0, .best_move = 0};
-    }
+ //  if (depth == 0){
+  //      return .{.score = 0, .best_move = 1};
+  // }
+
+    const curr_player : u64 = if ((game.moves & 1) == 0) game.red else game.yellow; 
 
     // DRAW
     if (game.moves == game.board_height * game.board_width){
-        print("returning moves here\n", .{});
+       // print("returning moves here and drawing\n", .{});
         return .{
             .score = 0,
             .best_move = 0, 
@@ -74,8 +79,24 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         }
     }
 
+
     // Upper bound Cal
-    const max = (game.board_width * game.board_height - 1 - game.moves) / 2;
+    const max: i32 = @intCast((game.board_width * game.board_height - 1 - game.moves) / 2);
+    const masked = (curr_player + game.board) & ((@as(u64,1) << 56) - 1);
+    const key : u56 = @intCast(masked);
+
+    if (game.tt.Get(key)) |val| {
+        const tt_val: i32 = @as(i32, val) + MIN_SCORE - 1;
+        if (tt_val > alpha) alpha = tt_val;
+        if (alpha >= beta) {
+            return .{ .score = alpha, .best_move = 0 };
+        }
+    }else{
+        
+        print("No val exists\n", .{});
+
+    }
+    
     if (beta > max){
         beta = max;
         if (alpha >= beta){
@@ -109,7 +130,54 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
 
     }
 
+    var encoded: i32 = alpha - MIN_SCORE + 1; // or max, depending on what you want
+    if (encoded < 1) encoded = 1;
+    if (encoded > 255) encoded = 255;
+    const stored_val: u8 = @intCast(encoded);
+    game.tt.Put(key, stored_val);
+
     return .{.score = alpha, .best_move = best_move };
+}
+
+pub fn Solve(g: *base.Game, weak: bool) SearchRes {
+    const total_cells: i32 = base.WIDTH * base.HEIGHT;
+
+    const center: i32 = @divTrunc((total_cells - g.moves), 2);
+    var min: i32 = -center;
+    var max: i32 = @divTrunc((total_cells + 1 - g.moves), 2);
+
+    if (weak) {
+        min = -1;
+        max = 1;
+    }
+
+    var best_move: u3 = 0;
+
+    while (min < max) {
+        var med: i32 = min + @divTrunc((max - min) , 2);
+
+        if (med <= 0 and @divTrunc(min , 2) < med) {
+            med = @divTrunc(min, 2);
+        } else if (med >= 0 and @divTrunc(max , 2) > med) {
+            med = @divTrunc(max, 2);
+        }
+
+        const r = NegaMax(g, 8, med, med + 1);
+
+        if (r.score <= med) {
+            max = r.score;
+        } else {
+            min = r.score;
+        }
+
+        // Track last best move from the most recent full negamax search
+        best_move = r.best_move;
+    }
+
+    return .{
+        .score = min,       // like C++'s `return min;`
+        .best_move = best_move,
+    };
 }
 
 fn CanPlay(col: u3, g: *base.Game) bool{
