@@ -66,7 +66,7 @@ pub fn main() !void{
     ;
 
     var allocator = std.heap.page_allocator;
-    var tt = try t.TT.init(&allocator, 1 << 24);
+    var tt = try t.TT.init(&allocator, 1 << 23);
     defer tt.deinit(&allocator);
 
     var game = base.Game {

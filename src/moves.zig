@@ -7,13 +7,13 @@ pub const MoveSorter = struct {
 
     pub const Entry = struct {
         move: u3,
-        score: u64,
+        score: i32,
     };
 
     size: u64,
     entries: []Entry,
 
-    pub fn Add(self: *MoveSorter , move: u3, score: u64) void{
+    pub fn Add(self: *MoveSorter , move: u3, score: i32) void{
 
         var pos = self.size;
         self.size += 1;
@@ -30,14 +30,14 @@ pub const MoveSorter = struct {
 
     }
 
-    pub fn GetNext(self: *MoveSorter) u3{
+    pub fn GetNext(self: *MoveSorter) ?u3{
         
         if (self.size > 0){
             self.size -= 1;
             return self.entries[self.size].move;
         }
 
-        return 0;
+        return null;
         
     }
 

@@ -10,6 +10,8 @@ const bttm_mask = Bottom(7, 6);
 
 const INF: i32 = 1_000_000;
 
+const nodeCount : u64 = 0;
+
 pub const SearchRes = struct {
     score: i32,
     best_move: u3,
@@ -55,24 +57,19 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
     var alpha = alpha_in;
     var beta = beta_in;
 
- //  if (depth == 0){
-  //      return .{.score = 0, .best_move = 1};
+   //if (depth == 0){
+   //     return .{.score = 0, .best_move = 1};
   // }
-  //
-
-    const next_root : u64 =  PossibleNonLosingMoves(game);
-
-    const curr_player : u64 = if ((game.moves & 1) == 0) game.red else game.yellow; 
-
+  
     // DRAW
     if (game.moves == game.board_height * game.board_width){
        // print("returning moves here and drawing\n", .{});
         return .{
             .score = 0,
-            .best_move = 0, 
+            .best_move = 7, 
         };
     }
-   
+
     // WINNING MOVE
     for (0..game.board_width) |i| {
         //const c: u3 = @intCast(i);
@@ -84,6 +81,17 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
             };
         }
     }
+    
+   // Non losing moves
+    const next_root : u64 =  PossibleNonLosingMoves(game);
+
+    if (next_root == 0) {
+
+        const lose_score: i32 = -@as(i32 ,(game.board_width * game.board_height - game.moves) / 2);
+        return .{ .score = lose_score, .best_move = 7 };
+    }
+
+    const curr_player : u64 = if ((game.moves & 1) == 0) game.red else game.yellow; 
 
 
     // Upper bound Cal
@@ -96,7 +104,7 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         const tt_val: i32 = @as(i32, val) + MIN_SCORE - 1;
         if (tt_val > alpha) alpha = tt_val;
         if (alpha >= beta) {
-            return .{ .score = alpha, .best_move = 0 };
+            return .{ .score = alpha, .best_move = 7 };
         }
     }else{
         
@@ -107,7 +115,8 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
     if (beta > max){
         beta = max;
         if (alpha >= beta){
-            return .{ .score = beta, .best_move = 0};
+            print("beta is {d} and alpha is {d} \n" , .{beta, alpha});
+            return .{ .score = beta, .best_move = 7};
         }
     }
 
@@ -118,27 +127,34 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         .entries = storage[0..],   // slice backed by storage
     };
 
-    var best_move: u3 = 0;
 
     var i: usize = base.WIDTH;
     
     while(i > 0) : (i -= 1) {
-        
-        const col : u3 = @intCast(col_order[i]);
-        const move : u3 = @intCast(next_root & base.colMask(col));
+        const idx = i - 1;
+        const col: u3 = @intCast(col_order[idx]);
+       // const col : u3 = @intCast(col_order[i]);
+        const move = next_root & base.colMask(col);
 
         if (move != 0){
             
-            moves.Add(move, MoveScore(game, move, curr_player));
+            print("storing move \n", .{});
+            moves.Add(col, MoveScore(game, move, curr_player));
 
         }
 
     }
 
-    while (true){
-        
-        const next : u3 = moves.GetNext();
-        if (next == 0) break;
+    var best_move: u3 = 0;
+    var have_move = false;
+
+    while (moves.GetNext()) |next|{
+
+        if (!have_move){
+            best_move = next;
+            have_move = true;
+
+        }
 
         var child = game.*;
         _ = base.Play(&child, next);
@@ -147,13 +163,14 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         const score = -1 * childRes.score;
 
         if (score >= beta){
-            
+            print("Returning best score for next {d}\n", .{score});
             return .{ .score = score, .best_move = next};
 
         }
 
         if (score > alpha) {
             
+            print("Returning best score\n", .{});
             alpha = score;
             best_move = next;
 
@@ -162,29 +179,6 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
 
     }
    
-    // Leaf Node Calculation
-   // for (0..game.board_width) |i| {
-    //    const c: u3 = @intCast(col_order[i]);
-
-       // if (CanPlay(c, game)) {
-            
-     //       var child = game.*;
-    //       _ = base.Play(&child, c);
-            
-     //       const childRes = NegaMax(&child, depth - 1, -beta, -alpha);
-     //       const score = -1 * childRes.score;
-
-    //        if (score >= beta){
-     //           return .{ .score = score, .best_move = c};
-    //        }
-  //          if (score > alpha){
-   //             alpha = score;
-   //             best_move = c;
-  //          }
-
-   //     }
-
-    //}
 
     var encoded: i32 = alpha - MIN_SCORE + 1; // or max, depending on what you want
     if (encoded < 1) encoded = 1;
@@ -218,16 +212,18 @@ pub fn Solve(g: *base.Game, weak: bool) SearchRes {
             med = @divTrunc(max, 2);
         }
 
-        const r = NegaMax(g, 8, med, med + 1);
+        const r = NegaMax(g, 29, med, med + 1);
 
         if (r.score <= med) {
             max = r.score;
         } else {
             min = r.score;
         }
+        
+        if (r.best_move != 7){
+            best_move = r.best_move;
+        }
 
-        // Track last best move from the most recent full negamax search
-        best_move = r.best_move;
     }
 
     return .{
@@ -246,8 +242,8 @@ fn PopCount(m: u64) u64{
     return c;
 }
 
-fn MoveScore(g: *base.Game , move: u64, curr_player: u64) u64{
-    return PopCount(WinningPosition(g, curr_player | move));
+fn MoveScore(g: *base.Game , move: u64, curr_player: u64) i32{
+    return @intCast(PopCount(WinningPosition(g, curr_player | move)));
 }
 
 
@@ -260,8 +256,13 @@ fn CanPlay(col: u3, g: *base.Game) bool{
 
 fn PossibleNonLosingMoves(g: *base.Game) u64 {
     
+    const mask_all = g.red | g.yellow;
     var possible_mask = PossibleBttmMask(g);
-    const opp_win = WinningPosition(g, g.red);
+
+    const curr_player: u64 = if ((g.moves & 1) == 0) g.red else g.yellow;
+    const opp_player: u64 = mask_all ^ curr_player;
+
+    const opp_win = WinningPosition(g, opp_player);
     const forced_moves = possible_mask & opp_win;
 
     if (forced_moves != 0){
