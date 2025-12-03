@@ -64,7 +64,7 @@ pub fn main() !void{
         \\Welcome to Connect 4 created by
         \\Cameron Paul
     ;
-
+    
     var allocator = std.heap.page_allocator;
     var tt = try t.TT.init(&allocator, 1 << 23);
     defer tt.deinit(&allocator);

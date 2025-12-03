@@ -106,16 +106,11 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         if (alpha >= beta) {
             return .{ .score = alpha, .best_move = 7 };
         }
-    }else{
-        
-        print("No val exists\n", .{});
-
     }
-    
+        
     if (beta > max){
         beta = max;
         if (alpha >= beta){
-            print("beta is {d} and alpha is {d} \n" , .{beta, alpha});
             return .{ .score = beta, .best_move = 7};
         }
     }
@@ -137,10 +132,7 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         const move = next_root & base.colMask(col);
 
         if (move != 0){
-            
-            print("storing move \n", .{});
             moves.Add(col, MoveScore(game, move, curr_player));
-
         }
 
     }
@@ -163,14 +155,11 @@ pub fn NegaMax(game: *base.Game, depth: i64, alpha_in: i32, beta_in: i32) Search
         const score = -1 * childRes.score;
 
         if (score >= beta){
-            print("Returning best score for next {d}\n", .{score});
             return .{ .score = score, .best_move = next};
 
         }
 
         if (score > alpha) {
-            
-            print("Returning best score\n", .{});
             alpha = score;
             best_move = next;
 
